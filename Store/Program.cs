@@ -1,9 +1,32 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Store.Data;
+using Store.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// Conexão com o banco de dados
+string conexao = builder.Configuration.GetConnectionString("StoreConn");
+builder.Services.AddDbContext<AppDbContext>(
+    options => options.UseMySQL(conexao)
+);
+
+// Configuração do Identity
+builder.Services.AddIdentity<Usuario, IdentityRole>(
+    options => options.SignIn.RequireConfirmedEmail = false
+).AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
+
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var contexto = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await contexto.Database.EnsureCreatedAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
